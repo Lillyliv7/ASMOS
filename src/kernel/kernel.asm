@@ -17,8 +17,9 @@
 ;       |> strings.inc
 
 ; Entire operating system fits into 32 kibibytes :3c
-
 [ORG 0x8000]
+jmp $+4
+BOOT_MAGIC db "as"
 
 mov si, loaded_message
 call bios_print
