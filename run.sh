@@ -1,2 +1,2 @@
 #!/bin/bash
-qemu-system-i386 -hda boot.bin
+qemu-system-i386 -hda build/os.bin
