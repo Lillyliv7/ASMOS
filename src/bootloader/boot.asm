@@ -68,25 +68,33 @@ read_kernel:
 
 ; Start of kernel should be
 
-; jmp $+4
-; BOOT_MAGIC db "as"
+; jmp $+14
+; BOOT_MAGIC db 'asmos_kernel'
 
-; This function checks to make sure the bytes "a" and "s"
-; are in 0x8002 and 0x8003, similar to how the bootloader
-; is verified by the bios with 0xaa55 at the end of the
-; first sector
+; This function compares byte 0x8002 to byte 0x8002+boot_magic_length
+; to boot_magic to check if kernel.bin is a bootable file similar to
+; how the BIOS verifies bootloaders by checking for 0xaa55 at the end
+; of the first sector.
 
 verify_kernel:
 	pusha
-	mov al, [0x8002]
-	mov ah, 0x61
-	cmp al, ah
+
+	xor bx, bx
+verify_kernel_loop:
+
+	cmp bx, [boot_magic_length]
+	je verify_kernel_done
+
+	mov cx, [0x8002+bx]
+	mov dx, [boot_magic+bx]
+	cmp cl, dl
 	jne kernel_error
 
-	mov al, [0x8003]
-	mov ah, 0x73
-	cmp al, ah
-	jne kernel_error
+	inc bx
+
+	jmp verify_kernel_loop
+
+verify_kernel_done:
 	popa
 	ret
 
@@ -99,6 +107,9 @@ kernel_error:
 load_bios_message db 'ASMOS BOOTLOADER', 13, 10, 0
 reading_kernel_message db 'READ KERNEL.BIN FROM HDA SECTOR 2, CYLINDER 0, HEAD 0 TO SECTOR 64, CYLINDER 0, HEAD 0. 31.5 KIBIBYTES IN TOTAL', 13, 10, 0
 kernel_error_message db 'Not a bootable file', 13, 10, 0
+
+boot_magic db 'asmos_kernel'
+boot_magic_length db 12
 
 times 510-($-$$) db 0 ; fill rest of boot sector with 0 bytes
 
