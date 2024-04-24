@@ -30,6 +30,7 @@ load_kernel:
 
 	call read_kernel
 	call verify_kernel
+	call delay_before_start
 
 	jmp 0x8000 ; kernel is loaded at 0x8000
 
@@ -37,14 +38,17 @@ hang:
 	jmp hang
 
 bios_print:
+	pusha
+bios_print_loop:
 	lodsb
 	or al, al  ;zero=end of str
 	jz done    ;get out
 	mov ah, 0x0E
 	mov bh, 0
 	int 0x10
-	jmp bios_print
+	jmp bios_print_loop
 done:
+	popa
 	ret
 
 ; Read kernel from hard drive/floppy
@@ -63,6 +67,9 @@ read_kernel:
 	mov bx,0x8000	; Load kernel to 0x8000
 	int 0x13
 
+	mov si, kernel_read_message
+	call bios_print
+
 	ret
 
 
@@ -76,9 +83,18 @@ read_kernel:
 ; how the BIOS verifies bootloaders by checking for 0xaa55 at the end
 ; of the first sector.
 
+; in psuedocode
+; verify_kernel() {
+; 	for (uint_16 bx = 0; bx < boot_magic_length; bx++) {
+; 		if (!(uint_8 *)0x8002+bx == boot_magic[bx]) {
+; 			kernel_error();
+; 		}
+; 	}
+; }
+;
+
 verify_kernel:
 	pusha
-
 	xor bx, bx
 verify_kernel_loop:
 
@@ -103,10 +119,46 @@ kernel_error:
 	call bios_print
 	jmp hang
 
+delay_before_start:
+	pusha
+	mov al, 5
+delay_before_start_loop:
+	cmp al, 0
+	je delay_before_start_done
+
+	mov bl, '0'
+	mov dl, al
+	add dl, bl
+
+	mov bx, delay_before_start_message
+	add bx, 11
+	mov [bx], dl
+	
+	mov si, delay_before_start_message
+	call bios_print
+
+	pusha
+	mov ah, 0x86
+	xor dx, dx
+	mov cx, 10
+	int 0x15
+	popa
+
+	dec al
+
+	jmp delay_before_start_loop
+
+delay_before_start_done:
+	popa
+	ret
 
 load_bios_message db 'ASMOS BOOTLOADER', 13, 10, 0
 reading_kernel_message db 'READ KERNEL.BIN FROM HDA SECTOR 2, CYLINDER 0, HEAD 0 TO SECTOR 64, CYLINDER 0, HEAD 0. 31.5 KIBIBYTES IN TOTAL', 13, 10, 0
-kernel_error_message db 'Not a bootable file', 13, 10, 0
+kernel_error_message db 'NOT A BOOTABLE FILE', 13, 10, 0
+delay_before_start_message db 'BOOTING IN 0', 13, 10, 0
+delay_before_start_seconds db 5
+delay_before_start_number_position db 11, 0
+kernel_read_message db 'KERNEL.BIN READ!', 13, 10, 0
 
 boot_magic db 'asmos_kernel'
 boot_magic_length db 12

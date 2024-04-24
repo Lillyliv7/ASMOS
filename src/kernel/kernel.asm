@@ -24,10 +24,13 @@
 jmp $+14
 BOOT_MAGIC db 'asmos_kernel'
 
-mov si, loaded_message
-call bios_print
+kernel:
+    call clear_screen
+    
+    mov si, loaded_message
+    call bios_print
 
-jmp $
+    jmp $
 
 %include "src/kernel/display.inc"
 %include "src/kernel/strings.inc"
