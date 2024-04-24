@@ -1,17 +1,29 @@
+; kernel/kernel.asm
+; Made by Lilly on april 23, 2024
+
+; Kernel.bin gets loaded at 0x8000
+; (0x201 bytes after the end of the bootloader)
+
+; os.bin file structure
+; |> boot.bin
+; | 0x0 to 0x200
+; | 0x7c00 to 0x7dff in memory (1 sector)
+;    |> boot.asm
+; |> kernel.bin
+; | 0x201 to 0x8001
+; | 0x8000 to 0xfe00 in memory (63 sectors)
+;    |> kernel.asm
+;       |> display.inc
+;       |> strings.inc
+
+; Entire operating system fits into 32 kibibytes :3c
+
 [ORG 0x8000]
 
 mov si, loaded_message
 call bios_print
 
-bios_print:
-	lodsb
-	or al, al  ;zero=end of str
-	jz done    ;get out
-	mov ah, 0x0E
-	mov bh, 0
-	int 0x10
-	jmp bios_print
-done:
-	ret
+jmp $
 
-loaded_message db "Kernel loaded!", 13, 10, 0
+%include "src/kernel/display.inc"
+%include "src/kernel/strings.inc"

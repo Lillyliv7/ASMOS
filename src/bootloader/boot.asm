@@ -11,6 +11,12 @@ xor ax, ax
 mov ds, ax
 cld
 
+cli
+mov ds, ax             ; DS=0
+mov ss, ax             ; stack starts at seg 0
+mov sp, 0x4000         ; stack at 0x4000
+sti
+
 mov si, load_bios_message
 call bios_print
 call load_kernel
