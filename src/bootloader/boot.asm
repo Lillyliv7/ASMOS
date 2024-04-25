@@ -30,7 +30,7 @@ load_kernel:
 
 	call read_kernel
 	call verify_kernel
-	call delay_before_start
+	; call delay_before_start
 
 	jmp 0x8000 ; kernel is loaded at 0x8000
 
@@ -119,9 +119,25 @@ kernel_error:
 	call bios_print
 	jmp hang
 
+
+; Delays the startup by delay_before_start seconds and sends a message
+; once a second before loading the kernel
+
+; psuedocode
+; delay_before_start() {
+; 	for(uint_8 al = delay_before_start_seconds; al != 0; al--) {
+; 		uint8 bl = '0';
+; 		uint8 dl = al + bl;
+;
+; 		*(*delay_before_start_message + 11) = dl;
+; 		print(delay_before_start_message);
+; 		sleep(10);
+; 	}
+; }
+
 delay_before_start:
 	pusha
-	mov al, 5
+	mov al, [delay_before_start_seconds]
 delay_before_start_loop:
 	cmp al, 0
 	je delay_before_start_done
@@ -133,7 +149,7 @@ delay_before_start_loop:
 	mov bx, delay_before_start_message
 	add bx, 11
 	mov [bx], dl
-	
+
 	mov si, delay_before_start_message
 	call bios_print
 

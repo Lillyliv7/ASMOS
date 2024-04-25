@@ -25,12 +25,51 @@ jmp $+14
 BOOT_MAGIC db 'asmos_kernel'
 
 kernel:
+    call init_stacks
+
     call clear_screen
+
+    ; mov si, loaded_message
+    ; call bios_print
+
+    mov ax, 0x70
+    mov bx, bios_print
+    call setInterrupt
+
+    ; mov si, uint_16_to_string_in
+    ; mov word [uint_16_to_string_in], 0xfafa
+    ; mov dx, 0xfafa
+
+    ; call uint_16_to_string
+    ; mov si, uint_16_to_string_out
+
+    ; pusha
+    ; int 0x70
+    ; popa
+
+    mov si, swap_stack_text_1
+    ; push si
+    int 0x70
+
+    cli
+    call swap_stack
+    mov si, swap_stack_text
+    ; mov sp, si
+    ; pop si
+    call bios_print
+    call swap_stack
+    sti
     
     mov si, loaded_message
-    call bios_print
+    int 0x70
 
     jmp $
 
 %include "src/kernel/display.inc"
 %include "src/kernel/strings.inc"
+%include "src/kernel/libs/std.inc"
+%include "src/kernel/int.inc"
+%include "src/kernel/stacks.inc"
+
+swap_stack_text db "this is in our second stack", 13, 10, 0
+swap_stack_text_1 db "this is our first stack", 13, 10, 0
